@@ -63,28 +63,28 @@ void *adjust_thread(void *threadpool);
  */
 int is_thread_alive(pthread_t tid);
 int threadpool_free(threadpool_t *pool);
-
+//初始化线程池/* 最小线程数 , 最大线程数 , 任务队列最大任务数 */
 threadpool_t *threadpool_create(int min_thr_num, int max_thr_num, int queue_max_size)
 {
     int i;
     threadpool_t *pool = NULL;
     do {
+		//初始化线程池结构体
         if((pool = (threadpool_t *)malloc(sizeof(threadpool_t))) == NULL) {  
             printf("malloc threadpool fail");
             break;/*跳出do while*/
         }
-
-        pool->min_thr_num = min_thr_num;
-        pool->max_thr_num = max_thr_num;
-        pool->busy_thr_num = 0;
+        pool->min_thr_num = min_thr_num; //最小线程个数
+        pool->max_thr_num = max_thr_num; //最大线程个数
+        pool->busy_thr_num = 0;			 //忙碌的线程
         pool->live_thr_num = min_thr_num;               /* 活着的线程数 初值=最小线程数 */
-        pool->queue_size = 0;                           /* 有0个产品 */
-        pool->queue_max_size = queue_max_size;
-        pool->queue_front = 0;
-        pool->queue_rear = 0;
+        pool->queue_size = 0;            //任务数                /* 有0个产品 */
+        pool->queue_max_size = queue_max_size;//最大任务个数
+        pool->queue_front = 0;				  //第一个任务
+        pool->queue_rear = 0;				  //最后一个任务
         pool->shutdown = false;                         /* 不关闭线程池 */
 
-        /* 根据最大线程上限数， 给工作线程数组开辟空间, 并清零 */
+        /* 初始化线程id 数组 */
         pool->threads = (pthread_t *)malloc(sizeof(pthread_t)*max_thr_num); 
         if (pool->threads == NULL) {
             printf("malloc threads fail");
@@ -92,7 +92,7 @@ threadpool_t *threadpool_create(int min_thr_num, int max_thr_num, int queue_max_
         }
         memset(pool->threads, 0, sizeof(pthread_t)*max_thr_num);
 
-        /* 队列开辟空间 */
+        /* 初始化任务队列 是一个结构体 */
         pool->task_queue = (threadpool_task_t *)malloc(sizeof(threadpool_task_t)*queue_max_size);
         if (pool->task_queue == NULL) {
             printf("malloc task_queue fail");
@@ -111,6 +111,7 @@ threadpool_t *threadpool_create(int min_thr_num, int max_thr_num, int queue_max_
 
         /* 启动 min_thr_num 个 work thread */
         for (i = 0; i < min_thr_num; i++) {
+			//循环创建线程   线程id						回调函数			
             pthread_create(&(pool->threads[i]), NULL, threadpool_thread, (void *)pool);/*pool指向当前线程池*/
             printf("start thread 0x%x...\n", (unsigned int)pool->threads[i]);
         }
@@ -125,7 +126,7 @@ threadpool_t *threadpool_create(int min_thr_num, int max_thr_num, int queue_max_
     return NULL;
 }
 
-/* 向线程池中 添加一个任务 */
+/* 向线程池中 添加一个任务 *///句柄         函数指针(任务)
 int threadpool_add(threadpool_t *pool, void*(*function)(void *arg), void *arg)
 {
     pthread_mutex_lock(&(pool->lock));
@@ -139,8 +140,8 @@ int threadpool_add(threadpool_t *pool, void*(*function)(void *arg), void *arg)
     }
 
     /* 清空 工作线程 调用的回调函数 的参数arg */
-    if (pool->task_queue[pool->queue_rear].arg != NULL) {
-        free(pool->task_queue[pool->queue_rear].arg);
+    if (pool->task_queue[pool->queue_rear].arg != NULL) {	//判断任务对尾
+        free(pool->task_queue[pool->queue_rear].arg);		
         pool->task_queue[pool->queue_rear].arg = NULL;
     }
     /*添加任务到任务队列里*/
