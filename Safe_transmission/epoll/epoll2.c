@@ -18,50 +18,81 @@ struct prcessdata
     int epfd;
     epollrun run;
 };
+int senddata(int fd,char*data,int len)
+{
+    int packlen = (len)+(sizeof(int));
+    char* package = (char*)malloc(packlen);
+    memset(package,0,packlen);
+    char* tp = package;
+    char* tl = (char*)&len;
+    int i=0; 
+    for(i=0;i<(sizeof(int));i++)
+    {
+        tp[i]=tl[i];
+    }
+    for(;i<packlen;i++)
+    {
+        tp[i] = *data++;
+    }
+    int ret = send(fd,package,packlen,0);
+    if(ret == -1)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+
+int recvdata(int fd,char**buf,int epfd)
+{
+    //先读一个包头
+    char clen[4]={0};
+    int ret = recv(fd,clen,4,0);
+    if(ret == 0)
+    {
+        //客户端断开连接 下树 关闭客户端
+        epoll_ctl(epfd,EPOLL_CTL_DEL,fd,0);
+        close(fd);
+    }
+    int len = *(int*)clen;
+    int i=0;
+    char* tbuf =(char*)malloc(len);
+    char* temp = tbuf;
+    memset(tbuf,0,len);
+    for(i=0;i<len;i++)
+    {
+        ret = recv(fd,temp,1,0);
+        if(ret == 0)
+        {
+            //客户端断开连接 下树 关闭客户端
+            epoll_ctl(epfd,EPOLL_CTL_DEL,fd,0);
+            close(fd);
+        }
+        temp++;
+    }
+    *buf = tbuf;
+    return len; 
+}
+
 
 
 //提供给用户的回调接口
 void*func(int tfd,int epfd)
 {
-    printf("xxx\n");
-    char buf[2] = {0};
-    int clen;
-    while((clen=recv(tfd,buf,sizeof(buf),0))!=-1)
-    {
-        printf("xxx\n");
-        if(clen == 0)
-        {
-            //客户端断开连接 下树 关闭客户端
-            epoll_ctl(epfd,EPOLL_CTL_DEL,tfd,0);
-            close(tfd);
-        }
-        else
-        {
-            printf("sss\n");
-            //正常
-            send(tfd,buf,clen,0);
+    char* buf = NULL;
+    int len = recvdata(tfd,&buf,epfd);
+    senddata(tfd,buf,len);   
 
-        }
-    }
     return NULL;
-}
-/*
-//读取数据函数
-int recvdata(int tfd,char*buf,blen)
-{
 
 }
 
-//发送数据函数
-int senddata(int tfd,char*buf,datalen)
-{
 
-}
-*/
+
 //线程业务
 void* process(void*data)
 {
-            printf("process\n");
+    printf("process\n");
     struct prcessdata * pdata = (struct prcessdata*)data;
     pdata->run(pdata->tfd,pdata->epfd);
     return NULL;
@@ -127,7 +158,6 @@ void initepoll(int port,char* ip,void*(epdata)(int,int))
             //有新连接请求
             if(events[i].data.fd == lfd)
             {
-                printf("有新连接\n");
                 int cfd = accept(lfd,(struct sockaddr*)&cil,&cillen);
                 if(cfd == -1)
                 {
@@ -155,28 +185,6 @@ void initepoll(int port,char* ip,void*(epdata)(int,int))
                 //线程池中添加任务
                 threadpool_add(thp, process, (void*)&s); 
 
-                /*
-                //需要通信 
-                char buf[1024] = {0};
-                int clen = recv(tfd,buf,sizeof(buf),0);
-                if(clen == 0)
-                {
-                //客户端断开连接 下树 关闭客户端
-                epoll_ctl(epfd,EPOLL_CTL_DEL,tfd,0);
-                close(tfd);
-                }
-                else if(clen == -1)
-                {
-                //发生错误 下树 关闭客户端
-                epoll_ctl(epfd,EPOLL_CTL_DEL,tfd,0);
-                close(tfd);
-                }
-                else
-                {
-                //正常
-                send(tfd,buf,clen,0);
-                }
-                */
             }
         }
     }
