@@ -113,6 +113,10 @@ void initepoll(int port,char* ip,void*(epdata)(int,int))
     {
         perror("error socket");
     }
+    //设置端口复用
+    int opt = 1;
+		setsockopt(lfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
+    
     //初始化结构体
     struct sockaddr_in seve;
     seve.sin_family = AF_INET;
