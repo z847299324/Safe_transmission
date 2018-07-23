@@ -18,7 +18,7 @@ struct prcessdata
     int epfd;
     epollrun run;
 };
-int senddata(int fd,char*data,int len)
+int senddata(int fd,char*data,int len,int epfd)
 {
     int packlen = (len)+(sizeof(int));
     char* package = (char*)malloc(packlen);
@@ -37,6 +37,8 @@ int senddata(int fd,char*data,int len)
     int ret = send(fd,package,packlen,0);
     if(ret == -1)
     {
+        epoll_ctl(epfd,EPOLL_CTL_DEL,fd,0); 
+        close(fd);
         return -1;
     }
     return 0;
@@ -55,6 +57,11 @@ int recvdata(int fd,char**buf,int epfd)
         close(fd);
     }
     int len = *(int*)clen;
+    //如果是空包 立刻回复一个空包
+    if(len == 0)
+    {
+        senddata(fd,NULL,0,epfd); 
+    }
     int i=0;
     char* tbuf =(char*)malloc(len);
     char* temp = tbuf;
@@ -81,7 +88,7 @@ void*func(int tfd,int epfd)
 {
     char* buf = NULL;
     int len = recvdata(tfd,&buf,epfd);
-    senddata(tfd,buf,len);   
+    senddata(tfd,buf,len,epfd);   
 
     return NULL;
 
