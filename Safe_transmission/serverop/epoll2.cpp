@@ -9,16 +9,18 @@
 #include<unistd.h>
 #include <fcntl.h>
 #include"threadpool.h"
-#define EVENTS 1024
-typedef void*(*epollrun)(int,int);
+#include"epoll2.h"
+
 //线程结构体
+/*
 struct prcessdata
 {
     int tfd;
     int epfd;
     epollrun run;
 };
-int senddata(int fd,char*data,int len,int epfd)
+*/
+int Epoll::senddata(int fd,char*data,int len,int epfd)
 {
     int packlen = (len)+(sizeof(int));
     char* package = (char*)malloc(packlen);
@@ -45,7 +47,7 @@ int senddata(int fd,char*data,int len,int epfd)
 }
 
 
-int recvdata(int fd,char**buf,int epfd)
+int Epoll::recvdata(int fd,char**buf,int epfd)
 {
     //先读一个包头
     char clen[4]={0};
@@ -55,6 +57,7 @@ int recvdata(int fd,char**buf,int epfd)
         //客户端断开连接 下树 关闭客户端
         epoll_ctl(epfd,EPOLL_CTL_DEL,fd,0);
         close(fd);
+        return 0;
     }
     int len = *(int*)clen;
     //如果是空包 立刻回复一个空包
@@ -84,11 +87,11 @@ int recvdata(int fd,char**buf,int epfd)
 
 
 //提供给用户的回调接口
-void*func(int tfd,int epfd)
+void*func(Epoll*ep)
 {
     char* buf = NULL;
-    int len = recvdata(tfd,&buf,epfd);
-    senddata(tfd,buf,len,epfd);   
+    int len = ep->recvdata(ep->fd,&buf,ep->epfd);
+    ep->senddata(ep->fd,buf,len,ep->epfd);   
 
     return NULL;
 
@@ -100,12 +103,12 @@ void*func(int tfd,int epfd)
 void* process(void*data)
 {
     printf("process\n");
-    struct prcessdata * pdata = (struct prcessdata*)data;
-    pdata->run(pdata->tfd,pdata->epfd);
+    Epoll * pdata = (Epoll*)data;
+    pdata->run(pdata);
     return NULL;
 }
 
-void initepoll(int port,char* ip,void*(epdata)(int,int))
+void Epoll::initepoll(int port,char* ip,epollrun epdata)
 {
     //创建监听套接字
     int lfd = socket(AF_INET,SOCK_STREAM,0);
@@ -135,7 +138,7 @@ void initepoll(int port,char* ip,void*(epdata)(int,int))
         perror("error listen");
     }
     //初始化epoll树
-    int epfd = epoll_create(1024);
+    this->epfd = epoll_create(1024);
     if(epfd == -1)
     {
         perror("error epoll_create");
@@ -186,26 +189,21 @@ void initepoll(int port,char* ip,void*(epdata)(int,int))
             }
             else
             {
-                int tfd = events[i].data.fd;
+                this->fd = events[i].data.fd;
+                this->run = epdata;
                 //组织结构体
-                struct prcessdata s;
+                /*struct prcessdata s;
                 s.tfd = tfd;
                 s.epfd = epfd;
                 s.run = epdata;
-                printf("s.run\n");
+              	printf("s.run\n");
+                */
                 //线程池中添加任务
-                threadpool_add(thp, process, (void*)&s); 
+                threadpool_add(thp, process, (void*)this); 
 
             }
         }
     }
 
     close(lfd);
-}
-
-
-int main()
-{
-    initepoll(8080,"127.0.0.1",func);
-    return 0;
 }

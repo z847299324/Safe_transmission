@@ -1,4 +1,5 @@
 #pragma once
+#include<iostream>
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
@@ -10,10 +11,27 @@
 #include<unistd.h>
 #include <fcntl.h>
 #include"threadpool.h"
+#include"serverop.h"
 #define EVENTS 1024
-//初始化  eodata(int cfd,int epfd)
-void initepoll(int port,char* ip,void*(epdata)(int,int));
-//接收数据
-int recvdata(int fd,char**buf,int epfd); 
-//发送数据
-int senddata(int fd,char*data,int len);
+class ServerInfo;
+class Epoll;
+typedef void*(*epollrun)(Epoll*);
+class Epoll
+{
+public:
+	Epoll(){};
+	~Epoll(){};
+	//初始化  eodata(int cfd,int epfd)
+	void initepoll(int port,char* ip,epollrun epdata);
+	//接收数据
+	int recvdata(int fd,char**buf,int epfd); 
+	//发送数据
+	int senddata(int fd,char*data,int len,int epfd);
+public:
+	int fd;
+	int epfd;
+	epollrun run;
+	ServerInfo* sinfo;
+private:
+	
+};

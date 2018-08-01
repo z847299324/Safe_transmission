@@ -1,3 +1,5 @@
+//请求秘钥结构体编解码
+
 #include "RequestCodec.h"
 RequestCodec::RequestCodec()
 {
@@ -41,5 +43,5 @@ void * RequestCodec::msgDecode(char * inData, int inLen)
 	readNextNode(m_msg.serverId);
 	readNextNode(m_msg.r1);
 	printf("%s\n", m_msg.clientId);
-	return nullptr;
+	return &this->m_msg;
 }

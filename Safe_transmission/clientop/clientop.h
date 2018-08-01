@@ -29,8 +29,10 @@ public:
      int keyMngArrange();
     //秘钥校验
     
+
+     char* getKey();
 private:
     ClientInfo cinfo;
-    char Key[64];
+    char Key[32];
 };
 

@@ -40,5 +40,5 @@ void * RespondCodec::msgDecode(char * inData, int inLen)
 	readNextNode(m_msg.serverId);
 	readNextNode(m_msg.r2);
 	readNextNode(m_msg.seckeyid);
-	return nullptr;
+	return &this->m_msg;
 }

@@ -43,7 +43,8 @@ void* pthread(void*s)
         if(flag>=3)
         {
             //服务器断开连接 重新连接
-            connect(data->cfd,(struct sockaddr*)&data->seve,sizeof(data->seve));
+            printf("Network connection interruption\n");
+            //connect(data->cfd,(struct sockaddr*)&data->seve,sizeof(data->seve));
         }
     }
     return NULL;
