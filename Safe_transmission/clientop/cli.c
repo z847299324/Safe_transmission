@@ -34,6 +34,10 @@ void* pthread(void*s)
         senddata(data->cfd,NULL,0);
         flag++;
         ret = recv(data->cfd,&buf,10,0);
+        if(ret == 0)
+        {
+            return 0;
+        }
         //解锁
         pthread_mutex_unlock(&mtx_t);
         if(ret>0)
@@ -45,6 +49,7 @@ void* pthread(void*s)
             //服务器断开连接 重新连接
             printf("Network connection interruption\n");
             //connect(data->cfd,(struct sockaddr*)&data->seve,sizeof(data->seve));
+            return NULL;
         }
     }
     return NULL;
@@ -110,6 +115,11 @@ int recvdata(int fd,char**buf)
     {
         printf("recv error\n");
         close(fd);
+        return -1;
+    }
+    if(ret == 0)
+    {
+        printf("Disconnect\n");
         return 0;
     }
     int len = *(int*)clen;
@@ -124,6 +134,11 @@ int recvdata(int fd,char**buf)
         {
             printf("recv error\n");
             close(fd);
+            return -1;
+        }
+        if(ret == 0)
+        {
+            printf("Disconnect\n");
             return 0;
         }
 

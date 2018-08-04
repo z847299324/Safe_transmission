@@ -63,6 +63,7 @@ int Epoll::recvdata(int fd,char**buf,int epfd)
     //如果是空包 立刻回复一个空包
     if(len == 0)
     {
+        std::cout<<"12345"<<std::endl;
         senddata(fd,NULL,0,epfd); 
     }
     int i=0;

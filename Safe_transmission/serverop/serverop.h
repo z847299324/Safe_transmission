@@ -23,10 +23,11 @@ public:
     //服务器开始工作
     void workstart();
     //秘钥协商
-    int secMngArrange();
+    int secMngArrange(char**data,int *len);
     friend void* working(int cfd,int epfd);
-private:
     ServerInfo *sinfo;
-    RequestMsg reqmsg;
+    RequestMsg *reqmsg;
+    char Key[34];
+    RespondMsg * resmsg;
 };
 

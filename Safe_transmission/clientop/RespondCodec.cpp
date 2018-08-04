@@ -6,7 +6,8 @@ RespondCodec::RespondCodec()
 
 RespondCodec::RespondCodec(RespondMsg * msg)
 {
-	m_msg = *msg;
+	//m_msg = *msg;
+    memcpy(&m_msg,msg,sizeof(RespondMsg));
 }
 
 RespondCodec::~RespondCodec()

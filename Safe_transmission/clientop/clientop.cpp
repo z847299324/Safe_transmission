@@ -23,6 +23,7 @@ int clientop::keyMngArrange()
     RequestMsg reqmsg;
     reqmsg.cmdType = 1;
     strcpy(reqmsg.clientId,this->cinfo.clientId);
+    strcpy(reqmsg.serverId,this->cinfo.serverId);
     //秘钥随机数
     int i =0;
     for(i=0;i<30;i++)
@@ -31,7 +32,7 @@ int clientop::keyMngArrange()
     }
     //md5认证码
     char data[128]={0};
-    char tmp[32] = {0};
+    char tmp[34] = {0};
     strcat(data,reqmsg.clientId);
     strcat(data,reqmsg.serverId);
     strcat(data,reqmsg.r1);
@@ -41,7 +42,7 @@ int clientop::keyMngArrange()
     {
         sprintf(&reqmsg.authCode[i*2],"%02x",tmp[i]);
     }
-    memset(tmp,0,32);
+    memset(tmp,0,34);
     //报文编码
     char* codData=NULL;
     int eDatalen;
@@ -51,9 +52,19 @@ int clientop::keyMngArrange()
     int fd=initcli(cinfo.serverip,cinfo.serverport);
     senddata(fd,codData,eDatalen);
     eDatalen = recvdata(fd,&codData);
+    if(eDatalen == 0)
+    {
+        std::cout<<"disconnect"<<std::endl;
+        return 0;
+    }
+    if(eDatalen == -1)
+    {
+        return -1;
+    }
     //报文解码
     RespondCodec resDecod;
     RespondMsg* resmsg =(RespondMsg*)resDecod.msgDecode(codData,eDatalen);
+
     if(strcmp(resmsg->clientId,cinfo.clientId)==0&&strcmp(resmsg->serverId,cinfo.serverId)==0&&resmsg->rv==0)
     {   
         char r1r2[64]={0};
@@ -65,11 +76,12 @@ int clientop::keyMngArrange()
             r1r2[i*2+1]=resmsg->r2[i];
         }
         MD5((unsigned char*)r1r2,strlen(r1r2),(unsigned char*)tmp);
+        memset(Key,0,34);
         for(i=0;i<16;i++)
         {
             sprintf(&this->Key[i*2],"%02x",tmp[i]);
         }
-
+        std::cout<<"tmp::"<<tmp<<std::endl;
     }
 
     return 0;
@@ -77,7 +89,9 @@ int clientop::keyMngArrange()
 
 char* clientop:: getKey()
 {
-    return this->Key;
+    char* buf = new char[34];
+    strcpy(buf,Key);
+    return buf;
 }
 clientop::~clientop()
 {

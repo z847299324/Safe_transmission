@@ -6,7 +6,7 @@ class ClientInfo
 {
 public:
     char   clientId[12];   //客户端编号
-    char   AuthCode[16];   //认证码
+    char   AuthCode[34];   //认证码
     char   serverId[12];   //服务器端编号
 
     char   serverip[32];
@@ -33,6 +33,6 @@ public:
      char* getKey();
 private:
     ClientInfo cinfo;
-    char Key[32];
+    char Key[34];
 };
 

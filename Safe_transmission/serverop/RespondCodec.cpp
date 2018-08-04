@@ -1,12 +1,15 @@
 #include "RespondCodec.h"
-
+#include <iostream>
 RespondCodec::RespondCodec()
 {
 }
 
 RespondCodec::RespondCodec(RespondMsg * msg)
 {
-	m_msg = *msg;
+	//m_msg = *msg;
+    std::cout<<"msg::"<<msg->clientId<<std::endl;
+    memcpy(&m_msg,msg,sizeof(RespondMsg));
+    std::cout<<"m_msg::"<<m_msg.clientId<<std::endl;
 }
 
 RespondCodec::~RespondCodec()
